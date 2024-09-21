@@ -1,0 +1,13 @@
+services:
+  fastapi:
+    container_name: sentiment_ai
+    build: .
+    working_dir: /app
+    command: uvicorn main:app --host=0.0.0.0 --port=8000 --reload
+    environment:
+      DEBUG: 1
+    volumes:
+      - ./app:/app
+    ports:
+      - "8000:8000"
+    restart: on-failure
