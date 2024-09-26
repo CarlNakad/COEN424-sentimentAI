@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 3000
 
 # Run app.py when the container launches
-CMD ["python3", "app/main.py"]
+CMD ["uvicorn", "app/main.py:app", "--host", "0.0.0.0", "--port", "3000"]
