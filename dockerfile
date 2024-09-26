@@ -12,3 +12,9 @@ RUN pip install --trusted-host pypi.python.org -r requirements.txt
 
 # Copy the rest of the working directory contents into the container at /app
 COPY . .
+
+# Make port 3000 available to the world outside this container
+EXPOSE 3000
+
+# Run app.py when the container launches
+CMD ["python3", "app/main.py"]
