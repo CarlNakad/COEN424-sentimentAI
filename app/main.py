@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from mongodb_connection import mongodb_client, db
 from bson.objectid import ObjectId
-import uvicorn
+import os
 
 app = FastAPI()
 
@@ -20,4 +20,6 @@ async def get_data(user_id: str):
     return {"error": "User not found"}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    port = int(os.environ.get("PORT", 8080))
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=port)
