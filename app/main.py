@@ -20,6 +20,4 @@ async def get_data(user_id: str):
     return {"error": "User not found"}
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    app.run(port=int(os.environ.get("PORT", 8080)),host='0.0.0.0',debug=True)
