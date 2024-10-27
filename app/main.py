@@ -5,6 +5,13 @@ import os
 
 app = FastAPI()
 
+app = FastAPI(
+    title="Sentiment API",
+    description="API for sentiment reviews analysis",
+    version="1.0.0",
+    openapi_url="/openapi.yml"
+)
+
 @app.get("/")
 async def root():
     return {"Hello": "World!"}
@@ -18,3 +25,12 @@ async def get_data(user_id: str):
         user['_id'] = str(user['_id']) 
         return user
     return {"error": "User not found"}
+
+
+@app.get("/{api_provider}/places/{place_id}")
+async def get_place_reviews(api_provider: str, place_id: int):
+    return {"api_provider": api_provider, "place_id": place_id}
+
+@app.get("/{api_provider}/places/{place_id}/{review_count}")
+async def get_place_reviews(api_provider: str, place_id: int, review_count: int):
+    return {"api_provider": api_provider, "place_id": place_id, "review_count": review_count}
