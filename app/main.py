@@ -1,9 +1,8 @@
 from fastapi import FastAPI
-# from mongodb_connection import mongodb_client, db
-# from bson.objectid import ObjectId
+from mongodb_connection import mongodb_client, db
+from bson.objectid import ObjectId
+import place_review_api
 import os
-
-app = FastAPI()
 
 app = FastAPI(
     title="Sentiment API",
@@ -26,11 +25,10 @@ async def get_data(user_id: str):
         return user
     return {"error": "User not found"}
 
-
 @app.get("/{api_provider}/places/{place_id}")
-async def get_place_reviews(api_provider: str, place_id: int):
-    return {"api_provider": api_provider, "place_id": place_id}
+async def get_place_reviews(api_provider: str, place_id: str):
+    return place_review_api.get_place_reviews(api_provider, place_id, review_count=2)
 
 @app.get("/{api_provider}/places/{place_id}/{review_count}")
-async def get_place_reviews(api_provider: str, place_id: int, review_count: int):
-    return {"api_provider": api_provider, "place_id": place_id, "review_count": review_count}
+async def get_place_reviews(api_provider: str, place_id: str, review_count: int):
+    return place_review_api.get_place_reviews(api_provider, place_id, review_count)
