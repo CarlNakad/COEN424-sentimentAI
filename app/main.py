@@ -34,3 +34,12 @@ async def get_place_reviews(api_provider: str, place_id: int):
 @app.get("/{api_provider}/places/{place_id}/{review_count}")
 async def get_place_reviews(api_provider: str, place_id: int, review_count: int):
     return {"api_provider": api_provider, "place_id": place_id, "review_count": review_count}
+
+
+@app.get("/entity/{entity_name}/{review_count}")
+async def get_entity_reviews(entity_name: str, review_count: int):
+    return {"entity_name": entity_name, "review_count": review_count}
+
+@app.get("/entities/{review_count}")
+async def get_entities_reviews(review_count: int):
+    return {"review_count": review_count}

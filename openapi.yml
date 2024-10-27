@@ -27,6 +27,29 @@ paths:
           schema:
             $ref: "#/components/schemas/PlaceReview"
 
+
+  /entity/{entity_name}/{review_count}:
+    get:
+      description: Returns a list of reviews for an entity              
+      responses:
+        '200':
+          description: Successful response
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Review/EntitiesScore"
+
+  /entities/{review_count}:
+    get:
+      description: Returns a list of reviews for all entities              
+      responses:
+        '200':
+          description: Successful response
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Review/EntitiesScore"
+
 components:
   schemas:
     PlaceReview:
