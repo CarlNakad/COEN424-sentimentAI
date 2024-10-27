@@ -1,6 +1,7 @@
 from fastapi import FastAPI
-from mongodb_connection import mongodb_client, db
-from bson.objectid import ObjectId
+# from mongodb_connection import mongodb_client, db
+# from bson.objectid import ObjectId
+import os
 
 app = FastAPI()
 
