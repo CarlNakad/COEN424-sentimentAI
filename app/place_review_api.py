@@ -1,6 +1,4 @@
 import json
-from email.policy import default
-
 from bson import json_util
 from foursquare_api import get_foursquare_place, get_foursquare_place_reviews
 from google_nlp import analyze_sentiment

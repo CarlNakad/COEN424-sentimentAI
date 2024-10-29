@@ -1,8 +1,7 @@
 from fastapi import FastAPI
-from mongodb_connection import mongodb_client, db
+from mongodb_connection import db
 from bson.objectid import ObjectId
 import place_review_api
-import os
 
 app = FastAPI(
     title="Sentiment API",
