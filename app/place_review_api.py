@@ -4,20 +4,12 @@ from foursquare_api import get_foursquare_place, get_foursquare_place_reviews
 from google_nlp import analyze_sentiment
 from mongodb_connection import db
 
-def have_reviews_changed(place_id, new_reviews_id):
-    existing_review_id = db['review'].find({"place_id": place_id}, {'review_id': 1})
-    existing_list = [str(review['review_id']) for review in existing_review_id]
-    for review_id in new_reviews_id:
-        if review_id not in existing_list:
-            print("does if to check if changed")
-            return True
-
-def return_values(place_id):
+def return_values(place_id, review_count):
     return {
         "place": json.loads(json_util.dumps(db['place'].find({"place_id": place_id}, {"_id": 0}))),
         "reviews": json.loads(json_util.dumps(db['review'].find({"place_id": place_id,
                                                                  "entities_score.place_id": place_id},
-                                                                {"_id": 0, "entities_score._id": 0}))),
+                                                                {"_id": 0, "entities_score._id": 0}).limit(review_count))),
     }
 
 def sentiment_analysis(place_id, place, place_reviews):
@@ -51,23 +43,19 @@ def sentiment_analysis(place_id, place, place_reviews):
 def get_place_reviews(api_provider: str, place_id: str, review_count: int):
     place = get_foursquare_place(place_id)
     place_reviews = get_foursquare_place_reviews(place_id, review_count)
+    place_reviews = sorted(place_reviews, key=lambda x: x.get("created_at"), reverse=True)
 
-    search = db['place'].find_one({"place_id": place_id})
-    if search:
-        # here, additional check to see if reviews have changed
-        # check list of reviewIDs if same in db as incoming
-        print("went in first if")
-        new_reviews = []
-        for review in place_reviews:
-            new_reviews.append(review.get("review_id"))
-        if have_reviews_changed(place_id, new_reviews) is False:
-            print(have_reviews_changed(place_id, new_reviews))
-            return return_values(place_id)
-            # do sentiment analysis
+    db_reviews = db['review'].find({"place_id": place_id})
+    db_reviews = sorted(db_reviews, key=lambda x: x.get("created_at"), reverse=True)
+    
+    if db_reviews:
+        found_new_reviews = db_reviews[0].get("review_id") != place_reviews[0].get("review_id")
+        print("found_new_reviews: ", found_new_reviews)
+        if found_new_reviews or len(db_reviews) < review_count:
+            sentiment_analysis(place_id, place, place_reviews[len(db_reviews):])
     else:
-        print("went in first else")
         place.update({"api_provider": api_provider})
         db['place'].insert_one(place)
+        sentiment_analysis(place_id, place, place_reviews)
 
-    sentiment_analysis(place_id, place, place_reviews)
-    return return_values(place_id)
+    return return_values(place_id, review_count)
