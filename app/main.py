@@ -31,3 +31,10 @@ async def get_place_reviews(api_provider: str, place_id: str):
 @app.get("/{api_provider}/places/{place_id}/{review_count}")
 async def get_place_reviews(api_provider: str, place_id: str, review_count: int):
     return place_review_api.get_place_reviews(api_provider, place_id, review_count)
+
+@app.get("/{api_provider}/places/{place_id}/sentiment/{review_count}")
+async def get_place_reviews(api_provider: str, place_id: str, review_count: int):
+    reviews = place_review_api.get_place_reviews(api_provider, place_id, review_count)
+    for review in reviews["reviews"]:
+        review.pop("entities_score", None)
+    return reviews
