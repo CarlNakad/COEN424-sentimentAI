@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from mongodb_connection import db
 from bson.objectid import ObjectId
 import place_review_api
+from entity_api import get_entity_score, get_all_entities_score
+
 
 app = FastAPI(
     title="Sentiment API",
@@ -38,3 +40,14 @@ async def get_place_reviews(api_provider: str, place_id: str, review_count: int)
     for review in reviews["reviews"]:
         review.pop("entities_score", None)
     return reviews
+
+
+
+@app.get("/entity/{name}/{review_count}")
+async def entity_score(name: str, review_count: int, place_id: str):
+    return get_entity_score(name, review_count, place_id)
+
+@app.get("/entities/{review_count}")
+async def entities_score(review_count: int, place_id: str):
+    return get_all_entities_score(review_count, place_id)
+
