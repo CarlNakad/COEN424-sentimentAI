@@ -86,34 +86,23 @@ components:
         text:
           type: string
         sentiment_score:
-          ref: '#/components/schemas/SentimentScore'
+          type: number
         entities_score:
-          ref: '#/components/schemas/EntitiesScore'
+          type: array
+          items:
+            ref: '#/components/schemas/EntitiesScore'
         language:
           type: string
         date:
           type: string
           format: date-time
-      SentimentScore:
-        type: object
-        properties:
-          overall:
-            type: number
-          positive:
-            type: number
-          negative:
-            type: number
-          mixed:
-            type: number
-          neutral:
-            type: number
       EntitiesScore:
         type: object
         properties:
           name:
             type: string
-          sentiment:
+          sentiment_score:
             type: number
-          confidence:
+          confidence_score:
             type: number
     
