@@ -3,7 +3,7 @@ from foursquare_api import get_foursquare_place_reviews
 from google_nlp import analyze_sentiment
 from mongodb_connection import db
 
-# Function to perform sentiment analysis on new reviews and store results in MongoDB
+# Function tht performs sentiment analysis on new reviews and store results in MongoDB
 def perform_sentiment_analysis(place_id, reviews):
     analyzed_reviews = []
     for review in reviews:
@@ -18,7 +18,6 @@ def perform_sentiment_analysis(place_id, reviews):
             "language": analysis["language"]
         }
         
-        # Insert entity scores for each entity in the review
         for entity in analysis["entities_score"]:
             entity_data = {
                 "name": entity["name"],
@@ -31,35 +30,32 @@ def perform_sentiment_analysis(place_id, reviews):
         
         analyzed_reviews.append(analyzed_review)
     
-    # Store the analyzed reviews in MongoDB
     db['review'].insert_many(analyzed_reviews)
     return analyzed_reviews
 
-# Function to retrieve and analyze reviews if they don't exist or if there are new reviews
+# Function to retrieve and analyze reviews if they don't exist or if there are new reviewzz
 def retrieve_and_analyze_reviews(place_id, review_count):
     db_reviews = list(db['review'].find({"place_id": place_id}).sort("created_at", -1).limit(review_count))
     
-    # Fetch new reviews from Foursquare if there are fewer than the required count in MongoDB
     if len(db_reviews) < review_count:
         reviews = get_foursquare_place_reviews(place_id, review_count)
         new_reviews = [r for r in reviews if r not in db_reviews]
         
-        # Analyze new reviews
         analyzed_reviews = perform_sentiment_analysis(place_id, new_reviews)
         db_reviews.extend(analyzed_reviews)
 
     return db_reviews[:review_count]
 
-# Function to get sentiment analysis for a specific entity
+
 def get_entity_score(name, review_count, place_id):
-    retrieve_and_analyze_reviews(place_id, review_count)  # Fetch and analyze reviews if necessary
+    retrieve_and_analyze_reviews(place_id, review_count)  
 
     pipeline = [
-        {"$match": {"name": name, "place_id": place_id}},  # Match the entity name and place
-        {"$sort": {"created_at": -1}},                      # Sort by the most recent reviews
-        {"$limit": review_count},                           # Limit to the specified review count
+        {"$match": {"name": name, "place_id": place_id}},  
+        {"$sort": {"created_at": -1}},                      
+        {"$limit": review_count},                           
         {
-            "$group": {                                     # Aggregate to calculate average sentiment and count
+            "$group": {                                     
                 "_id": "$name",
                 "average_sentiment": {"$avg": "$sentiment"},
                 "total_mentions": {"$sum": 1},
@@ -72,16 +68,16 @@ def get_entity_score(name, review_count, place_id):
 
     return result[0]
 
-# Function to get sentiment analysis for all entities
+# get sentiment analysis for all entities
 def get_all_entities_score(review_count, place_id):
-    retrieve_and_analyze_reviews(place_id, review_count)  # Fetch and analyze reviews if necessary
+    retrieve_and_analyze_reviews(place_id, review_count)  
 
     pipeline = [
-        {"$match": {"place_id": place_id}},  # Match the place
-        {"$sort": {"created_at": -1}},       # Sort by most recent
-        {"$limit": review_count},            # Limit to specified review count
+        {"$match": {"place_id": place_id}},  
+        {"$sort": {"created_at": -1}},       
+        {"$limit": review_count},            
         {
-            "$group": {                      # Group and aggregate for each entity
+            "$group": {                      
                 "_id": "$name",
                 "average_sentiment": {"$avg": "$sentiment"},
                 "total_mentions": {"$sum": 1},
