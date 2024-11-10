@@ -1,6 +1,5 @@
 import logging
 
-from fastapi import FastAPI
 from mongodb_connection import db
 from bson.objectid import ObjectId
 import place_review_api
@@ -10,7 +9,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 import auth
 from datetime import timedelta
-from auth import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, verify_token
+from auth import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, hash_password, verify_token, verify_password
 
 app = FastAPI(
     title="Sentiment API",
@@ -29,32 +28,64 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+
+#tobe deleted
 fake_users_db = {
-    "johndoe": {
-        "username": "johndoe",
-        "full_name": "John Doe",
-        "email": "johndoe@example.com",
+    "BASH": {
+        "username": "bash",
+        "full_name": "bashar",
+        "email": "bash@example.com",
         "hashed_password": "fakehashedpassword",
         "disabled": False,
     }
 }
 
-def fake_hash_password(password: str):
-    return "fakehashed" + password
 
-def authenticate_user(fake_db, username: str, password: str):
-    user = fake_db.get(username)
-    if not user:
-        logging.error(f"User {username} not found")
-        return False
-    if not fake_hash_password(password) == user["hashed_password"]:
-        logging.error(f"Password for user {username} does not match")
+
+@app.post("/register", status_code=status.HTTP_201_CREATED)
+async def register_user(user: User):
+    users_collection = db["users"]
+    # Check if user already exists
+    if users_collection.find_one({"username": user.username}):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already registered"
+        )
+    # hashbrown pass and store user in db
+    hashed_password = hash_password(user.password)
+    new_user = {
+        "username": user.username,
+        "hashed_password": hashed_password
+    }
+    users_collection.insert_one(new_user)
+    return {"message": "User registered successfully"}
+
+def authenticate_user(username: str, password: str):
+    users_collection = db["users"]
+    user = users_collection.find_one({"username": username})
+    if not user or not verify_password(password, user["hashed_password"]):
+        logging.error(f"Authentication failed for user {username}")
         return False
     return user
 
+
+
+# def fake_hash_password(password: str):
+#     return "fakehashed" + password
+
+# def authenticate_user(fake_db, username: str, password: str):
+#     user = fake_db.get(username)
+#     if not user:
+#         logging.error(f"User {username} not found")
+#         return False
+#     if not fake_hash_password(password) == user["hashed_password"]:
+#         logging.error(f"Password for user {username} does not match")
+#         return False
+#     return user
+
 @app.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = authenticate_user(fake_users_db, form_data.username, form_data.password)
+    user = authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -67,14 +98,23 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+
+
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    return verify_token(token, credentials_exception)
+    token_data = verify_token(token, credentials_exception)
+    user = db["users"].find_one({"username": token_data.username})
+    if user is None:
+        raise credentials_exception
+    return user
 
+
+
+#may need to add route of user after tokenization
 @app.get("/users/me")
 async def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
@@ -82,6 +122,7 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
 @app.get("/")
 async def root():
     return {"Hello": "World!"}
+
 
 @app.get("/user/{user_id}")
 async def get_data(user_id: str, current_user: User = Depends(get_current_user)):
@@ -92,6 +133,9 @@ async def get_data(user_id: str, current_user: User = Depends(get_current_user))
         user['_id'] = str(user['_id']) 
         return user
     return {"error": "User not found"}
+
+
+
 
 @app.get("/{api_provider}/places/{place_id}")
 async def get_place_reviews(api_provider: str, place_id: str):
@@ -111,7 +155,7 @@ async def get_place_reviews(api_provider: str, place_id: str, review_count: int)
 
 
 @app.get("/entity/{name}/{review_count}")
-async def entity_score(name: str, review_count: int, place_id: str):
+async def entity_score(name: str, review_count: int, place_id: str, current_user: str = Depends(get_current_user)):
     return get_entity_score(name, review_count, place_id)
 
 @app.get("/entities/{review_count}")
