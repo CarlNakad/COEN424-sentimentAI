@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from mongodb_connection import db
 from bson.objectid import ObjectId
 import place_review_api
+from sentiment_distribution import get_sentiment_distribution
 
 app = FastAPI(
     title="Sentiment API",
@@ -39,7 +40,6 @@ async def get_place_reviews(api_provider: str, place_id: str, review_count: int)
         review.pop("entities_score", None)
     return reviews
 
-
 @app.get("/{api_provider}/sentiment-over-time/{place_id}/{review_count}")
 async def get_sentiment_over_time(api_provider: str, place_id: str, review_count: int):
     reviews = place_review_api.get_place_reviews(api_provider, place_id, review_count)
@@ -69,3 +69,9 @@ async def get_sentiment_over_time(api_provider: str, place_id: str, review_count
     print(len(sentiment_over_time), "reviews found")
 
     return sentiment_over_time
+
+@app.get("/{api_provider}/places/{place_id}/sentiment-distribution/{review_count}")
+async def get_place_reviews(api_provider: str, place_id: str, review_count: int):
+    place_review_api.get_place_reviews(api_provider, place_id, review_count)
+    # manipulate to output the count
+    return get_sentiment_distribution(place_id)
