@@ -73,40 +73,11 @@ def get_place_reviews(api_provider: str, place_id: str, review_count: int):
     return return_values(place_id, review_count)
 
 def insert_place(place: Place):
-    db['place'].insert_one(place)
-    result = db['place'].insert_one(place.model_dump)
+    result = db['place'].insert_one(place.model_dump())
     inserted_place = db['place'].find_one({"_id": result.inserted_id})
     return inserted_place
 
 def get_place(place_id: str):
     return db['place'].find_one({"place_id:": place_id})
 
-def sentiment_analysis(place_id, place, place_reviews):
-    reviews = []
-    for review in place_reviews:
-        json_response = analyze_sentiment(review.get("text"))
-        entities_score = json_response.get("entities_score")
-        review_analyzed = {
-            "place_id": place_id,
-            "review_id": review.get("review_id"),
-            "text": review.get("text"),
-            "created_at": review.get("created_at"),
-            "sentiment_score": json_response.get("sentiment_score"),
-            "entities_score": entities_score,
-            "language": json_response.get("language")
-        }
-
-        for entity in entities_score:
-            entity.update({"review_id": review.get("review_id")})
-            entity.update({"place_id": place_id})
-        db['entity_score'].insert_one({"entities_score": entities_score})
-
-        reviews.append(review_analyzed)
-        review.update({"reviews": review_analyzed})
-
-    if len(reviews) > 0:
-        db['review'].insert_many(reviews)
-        result = db['place_reviews'].insert_one({"place": place, "reviews": reviews})
-        inserted_review = db['review'].find_one({"_id": result.inserted_id})
-    return inserted_review
 
