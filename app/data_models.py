@@ -10,11 +10,11 @@ class Address(BaseModel):
     country: Optional[str] = None
 
 class Place(BaseModel):
-    place_id: str
+    place_id: Optional[str] = None
     name: str
     address: Address
-    rating: float
-    api_provider: str
+    rating: Optional[float] = None
+    api_provider: Optional[str] = None
 
 class EntityScore(BaseModel):
     name: str
@@ -24,12 +24,12 @@ class EntityScore(BaseModel):
     place_id: str
  
 class Review(BaseModel):
-    place_id: Optional[str] = None
-    review_id: str
+    place_id: str
+    review_id: Optional[str] = None
     text: str
-    created_at: str
-    sentiment_score: float
-    entities_score: List[EntityScore]
+    created_at: Optional[str] = None
+    sentiment_score: Optional[float] = None
+    entities_score: Optional[List[EntityScore]] = None
 
 class PlaceReviews(BaseModel):
     place: Place

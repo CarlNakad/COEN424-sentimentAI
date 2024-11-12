@@ -4,7 +4,7 @@ from bson.objectid import ObjectId
 import place_review_api
 import uuid
 from sentiment_distribution import get_sentiment_distribution
-from data_models import PlaceReviews
+from app.data_models import Review, Place
 
 app = FastAPI(
     title="Sentiment API",
@@ -78,9 +78,14 @@ async def get_place_reviews(api_provider: str, place_id: str, review_count: int)
     # manipulate to output the count
     return get_sentiment_distribution(place_id)
 
-@app.post("/places/upload-reviews", response_model=PlaceReviews)
-async def upload_reviews(place_reviews: PlaceReviews):
-    # return the place id and api provider
-    api_provider = "N/A"
-    place_id = str(uuid.uuid4())
-    return {}
+@app.post("/places/upload-place", response_model=Place)
+async def upload_places(place: Place):
+    if not place.place_id:
+        place.place_id = str(uuid.uuid4())
+    if not place.api_provider:
+        place.api_provider = "N/A"
+    return place_review_api.insert_place(place)
+
+@app.post("/places/{place_id}/upload-review", response_model=Review)
+async def upload_reviews(place_id:str, review:Review):
+    return place_review_api.insert_review(review)

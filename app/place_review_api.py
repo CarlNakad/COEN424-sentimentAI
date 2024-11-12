@@ -1,6 +1,7 @@
 import json
 from bson import json_util
 from fastapi import HTTPException
+from data_models import Place, Review
 
 from foursquare_api import get_foursquare_place, get_foursquare_place_reviews
 from google_nlp import analyze_sentiment
@@ -70,3 +71,15 @@ def get_place_reviews(api_provider: str, place_id: str, review_count: int):
         sentiment_analysis(place_id, place, place_reviews)
 
     return return_values(place_id, review_count)
+
+def insert_place(place: Place):
+    db['place'].insert_one(place)
+    result = db['place'].insert_one(place.model_dump)
+    inserted_place = db['place'].find_one({"_id": result.inserted_id})
+    return inserted_place
+
+def insert_review(review: Review):
+    db['review'].insert_one(review)
+    result = db['place'].insert_one(review.model_dump)
+    inserted_place = db['place'].find_one({"_id": result.inserted_id})
+    return inserted_place
