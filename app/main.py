@@ -88,4 +88,7 @@ async def upload_places(place: Place):
 
 @app.post("/places/{place_id}/upload-review", response_model=Review)
 async def upload_reviews(place_id:str, review:Review):
-    return place_review_api.insert_review(review)
+    # throw error for unknown place_id
+    place = place_review_api.get_place(place_id)
+    place_review_api.sentiment_analysis(place_id, place, review.model_dump)
+    return place_review_api.return_values(place_id, 0)

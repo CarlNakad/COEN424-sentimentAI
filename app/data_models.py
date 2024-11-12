@@ -30,6 +30,7 @@ class Review(BaseModel):
     created_at: Optional[str] = None
     sentiment_score: Optional[float] = None
     entities_score: Optional[List[EntityScore]] = None
+    language: str
 
 class PlaceReviews(BaseModel):
     place: Place
