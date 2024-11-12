@@ -38,3 +38,34 @@ async def get_place_reviews(api_provider: str, place_id: str, review_count: int)
     for review in reviews["reviews"]:
         review.pop("entities_score", None)
     return reviews
+
+
+@app.get("/{api_provider}/sentiment-over-time/{place_id}/{review_count}")
+async def get_sentiment_over_time(api_provider: str, place_id: str, review_count: int):
+    reviews = place_review_api.get_place_reviews(api_provider, place_id, review_count)
+    reviews["reviews"] = sorted(reviews["reviews"], key=lambda x: x.get("created_at"))
+
+    sentiment_over_time = []
+    for review in reviews["reviews"]:
+        sentiment_score = review.get("sentiment_score")
+
+        if sentiment_score >= 0.3:
+            sentiment = "positive"
+        elif sentiment_score >= 0.1:
+            sentiment = "neutral"
+        elif sentiment_score > -0.1:
+            sentiment = "mixed"
+        elif sentiment_score >= -0.3:
+            sentiment = "neutral"
+        else:
+            sentiment = "negative"
+
+        sentiment_over_time.append({
+            "created_at": review.get("created_at"),
+            "sentiment": sentiment,
+            "sentiment_score": review.get("sentiment_score")
+        })
+
+    print(len(sentiment_over_time), "reviews found")
+
+    return sentiment_over_time
