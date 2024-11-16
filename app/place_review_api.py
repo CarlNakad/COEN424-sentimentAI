@@ -18,6 +18,10 @@ def return_values(place_id, review_count):
                                                                 {"_id": 0, "entities_score._id": 0}).limit(review_count))),
     }
 
+def return_reviews(place_id, review_count):
+    return json.loads(json_util.dumps(db['review'].find({"place_id": place_id},
+                                                       {"_id": 0, "entities_score._id": 0}).limit(review_count)))
+
 def sentiment_analysis(place_id, place, place_reviews):
     reviews = []
     for review in place_reviews:
@@ -78,6 +82,6 @@ def insert_place(place: Place):
     return inserted_place
 
 def get_place(place_id: str):
-    return db['place'].find_one({"place_id:": place_id})
+    return db['place'].find_one({"place_id": place_id})
 
 

@@ -1,11 +1,12 @@
-from fastapi import FastAPI
+from typing import List
+from fastapi import FastAPI, HTTPException
 from mongodb_connection import db
 from bson.objectid import ObjectId
 import place_review_api
 import uuid
 from datetime import datetime
 from sentiment_distribution import get_sentiment_distribution
-from data_models import Review, Place
+from data_models import Review, Place, PlaceReviews
 
 app = FastAPI(
     title="Sentiment API",
@@ -87,14 +88,16 @@ async def upload_places(place: Place):
         place.api_provider = "N/A"
     return place_review_api.insert_place(place)
 
-@app.post("/places/{place_id}/upload-review", response_model=Review)
+@app.post("/places/{place_id}/upload-review", response_model=List[Review])
 async def upload_reviews(place_id:str, review:Review):
-    # throw error for unknown place_id
     place = place_review_api.get_place(place_id)
-    print(place)
+    if not place:
+        raise HTTPException(status_code=404, detail="Place not found")
+
     review.place_id = place_id
     review.review_id = str(uuid.uuid4())
     if not review.created_at:
         review.created_at = str(datetime.now().isoformat())
-    place_review_api.sentiment_analysis(place_id, place, review.model_dump())
-    return place_review_api.return_values(place_id, 0)
+    
+    place_review_api.sentiment_analysis(place_id, place, [review.model_dump()])
+    return place_review_api.return_reviews(place_id, 0)
