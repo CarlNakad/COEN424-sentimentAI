@@ -8,7 +8,7 @@ from google_nlp import analyze_sentiment
 from mongodb_connection import db
 import logging
 
-api_providers = ["foursquare"]
+api_providers = ["foursquare", None]
 
 def return_values(place_id, review_count):
     return {
@@ -51,28 +51,27 @@ def sentiment_analysis(place_id, place, place_reviews):
 
 
 def get_place_reviews(api_provider: str, place_id: str, review_count: int):
-    if not api_provider or api_provider not in api_providers:
+    if api_provider not in api_providers:
         raise HTTPException(status_code=400, detail="Invalid API provider")
     if review_count < 1:
         raise HTTPException(status_code=400, detail="Invalid review count")
 
+    if api_provider is api_providers[0]:
+        place = get_foursquare_place(place_id)
+        place_reviews = get_foursquare_place_reviews(place_id, review_count)
+        place_reviews = sorted(place_reviews, key=lambda x: x.get("created_at"), reverse=True)
 
-    place = get_foursquare_place(place_id)
-
-    place_reviews = get_foursquare_place_reviews(place_id, review_count)
-    place_reviews = sorted(place_reviews, key=lambda x: x.get("created_at"), reverse=True)
-
-    db_reviews = db['review'].find({"place_id": place_id})
-    db_reviews = sorted(db_reviews, key=lambda x: x.get("created_at"), reverse=True)
-    
-    if db_reviews:
-        found_new_reviews = db_reviews[0].get("review_id") != place_reviews[0].get("review_id")
-        if found_new_reviews or len(db_reviews) < review_count:
-            sentiment_analysis(place_id, place, place_reviews[len(db_reviews):])
-    else:
-        place.update({"api_provider": api_provider})
-        db['place'].insert_one(place)
-        sentiment_analysis(place_id, place, place_reviews)
+        db_reviews = db['review'].find({"place_id": place_id})
+        db_reviews = sorted(db_reviews, key=lambda x: x.get("created_at"), reverse=True)
+        
+        if db_reviews:
+            found_new_reviews = db_reviews[0].get("review_id") != place_reviews[0].get("review_id")
+            if found_new_reviews or len(db_reviews) < review_count:
+                sentiment_analysis(place_id, place, place_reviews[len(db_reviews):])
+        else:
+            place.update({"api_provider": api_provider})
+            db['place'].insert_one(place)
+            sentiment_analysis(place_id, place, place_reviews)
 
     return return_values(place_id, review_count)
 
