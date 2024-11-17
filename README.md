@@ -30,7 +30,11 @@ The REST API to SentimentAI is described below.
 ### Response
 
 
-## Upload a Place
+## Create a place
+
+You need to create a place to be able to upload your own reviews. You must include:
+- The name of the place
+- The address
 
 ### Data model for Place
 
@@ -48,9 +52,11 @@ The REST API to SentimentAI is described below.
 
 ### Response
 
-A dictionary of the place uploaded that contains the generated place_id. This place_id must be used to upload reviews and query other endpoints.
+A json representation of the place that you uploaded. It contains the generated place_id for your place. This place_id must be used to upload reviews and query other endpoints.
 
-## Upload a Review
+## Upload a review
+
+Upload your own reviews to have them analyzed. You must only provide the review (text).
 
 ### Data model for Review
 
@@ -62,7 +68,7 @@ A dictionary of the place uploaded that contains the generated place_id. This pl
 
 ### Request
 
-`POST /places/upload-place`
+`POST /places/<place_id>/upload-review`
 
     curl -X POST -H "Content-Type: application/json" -d @review.json http://localhost:8080/places/<place_id>/upload-review
 
