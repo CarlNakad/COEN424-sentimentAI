@@ -5,7 +5,7 @@ BASE_URL = "http://127.0.0.1:8000"
 
 def test_token_authentication():
     # Step 1: Get a token
-    response = httpx.post(f"{BASE_URL}/token", data={"username": "johndoe", "password": "password"})
+    response = httpx.post(f"{BASE_URL}/token", data={"username": "bash", "password": "1234"})
     assert response.status_code == 200
     token = response.json().get("access_token")
     assert token is not None

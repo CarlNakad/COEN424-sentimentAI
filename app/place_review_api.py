@@ -47,10 +47,12 @@ def get_place_reviews(api_provider: str, place_id: str, review_count: int):
 
     db_reviews = db['review'].find({"place_id": place_id})
     db_reviews = sorted(db_reviews, key=lambda x: x.get("created_at"), reverse=True)
-    
+    #print(db_reviews)
     if db_reviews:
         found_new_reviews = db_reviews[0].get("review_id") != place_reviews[0].get("review_id")
         print("found_new_reviews: ", found_new_reviews)
+        print(db_reviews[0].get("review_id"))
+        print( "SECONDDDDDDDDD", place_reviews[0].get("review_id"))
         if found_new_reviews or len(db_reviews) < review_count:
             sentiment_analysis(place_id, place, place_reviews[len(db_reviews):])
     else:

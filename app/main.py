@@ -154,9 +154,9 @@ async def get_place_reviews(api_provider: str, place_id: str, review_count: int)
 
 
 
-@app.get("/entity/{name}/{review_count}")
-async def entity_score(name: str, review_count: int, place_id: str, current_user: str = Depends(get_current_user)):
-    return get_entity_score(name, review_count, place_id)
+@app.get("/{api_provider}/entity/{name}/{review_count}")
+async def entity_score(api_provider: str, entity_name: str, review_count: int, place_id: str, current_user: str = Depends(get_current_user)):
+    return get_entity_score(api_provider,place_id, review_count, entity_name)
 
 @app.get("/entities/{review_count}")
 async def entities_score(review_count: int, place_id: str):
