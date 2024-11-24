@@ -137,15 +137,15 @@ async def get_data(user_id: str, current_user: User = Depends(get_current_user))
 
 
 
-@app.get("/{api_provider}/places/{place_id}")
+@app.get("/{api_provider}/places/{place_id}", dependencies=[Depends(get_current_user)])
 async def get_place_reviews(api_provider: str, place_id: str):
     return place_review_api.get_place_reviews(api_provider, place_id, review_count=2)
 
-@app.get("/{api_provider}/places/{place_id}/{review_count}")
+@app.get("/{api_provider}/places/{place_id}/{review_count}", dependencies=[Depends(get_current_user)])
 async def get_place_reviews(api_provider: str, place_id: str, review_count: int):
     return place_review_api.get_place_reviews(api_provider, place_id, review_count)
 
-@app.get("/{api_provider}/places/{place_id}/sentiment/{review_count}")
+@app.get("/{api_provider}/places/{place_id}/sentiment/{review_count}", dependencies=[Depends(get_current_user)])
 async def get_place_reviews(api_provider: str, place_id: str, review_count: int):
     reviews = place_review_api.get_place_reviews(api_provider, place_id, review_count)
     for review in reviews["reviews"]:
@@ -154,11 +154,11 @@ async def get_place_reviews(api_provider: str, place_id: str, review_count: int)
 
 
 
-@app.get("/{api_provider}/entity/{name}/{review_count}")
+@app.get("/{api_provider}/entity/{name}/{review_count}", dependencies=[Depends(get_current_user)])
 async def entity_score(api_provider: str, entity_name: str, review_count: int, place_id: str, current_user: str = Depends(get_current_user)):
     return get_entity_score(api_provider,place_id, review_count, entity_name)
 
-@app.get("/entities/{review_count}")
-async def entities_score(review_count: int, place_id: str):
-    return get_all_entities_score(review_count, place_id)
+# @app.get("/{api_provider}/entities/{review_count}", dependencies=[Depends(get_current_user)])
+# async def entities_score(api_provider: str, review_count: int, place_id: str , current_user: str = Depends(get_current_user)):
+#     return get_all_entities_score(api_provider, review_count, place_id)
 

@@ -36,7 +36,9 @@ def sentiment_analysis(place_id, place, place_reviews):
         # for the place_review table
         review.update({"reviews": review_analyzed})
 
-    db['review'].insert_many(reviews)
+
+    if reviews:
+        db['review'].insert_many(reviews)
     db['place_reviews'].insert_one({"place": place, "reviews": reviews})
 
 
