@@ -159,7 +159,7 @@ async def get_place_reviews(place_id: str, review_count: int, api_provider: Opti
         review.pop("entities_score", None)
     return reviews
 
-@app.get("/places/{place_id}/sentiment-over-time/{review_count}")
+@app.get("/places/{place_id}/sentiment-over-time/{review_count}", dependencies=[Depends(get_current_user)])
 async def get_sentiment_over_time(place_id: str, review_count: int, api_provider: Optional[str] = None):
     reviews = place_review_api.get_place_reviews(api_provider, place_id, review_count)
     reviews["reviews"] = sorted(reviews["reviews"], key=lambda x: x.get("created_at"))
@@ -189,13 +189,13 @@ async def get_sentiment_over_time(place_id: str, review_count: int, api_provider
 
     return sentiment_over_time
 
-@app.get("/places/{place_id}/sentiment-distribution/{review_count}")
+@app.get("/places/{place_id}/sentiment-distribution/{review_count}", dependencies=[Depends(get_current_user)])
 async def get_place_reviews(place_id: str, review_count: int, api_provider: Optional[str] = None):
     place_review_api.get_place_reviews(api_provider, place_id, review_count)
     # manipulate to output the count
     return get_sentiment_distribution(place_id)
 
-@app.post("/places/upload-place", response_model=Place)
+@app.post("/places/upload-place", response_model=Place, dependencies=[Depends(get_current_user)])
 async def upload_places(place: Place):
     if not place.place_id:
         place.place_id = str(uuid.uuid4())
@@ -203,7 +203,7 @@ async def upload_places(place: Place):
         place.api_provider = None
     return place_review_api.insert_place(place)
 
-@app.post("/places/{place_id}/upload-review", response_model=List[Review])
+@app.post("/places/{place_id}/upload-review", response_model=List[Review] ,dependencies=[Depends(get_current_user)])
 async def upload_reviews(place_id:str, review:Review):
     place = place_review_api.get_place(place_id)
     if not place:
