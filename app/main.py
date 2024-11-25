@@ -6,10 +6,12 @@ import place_review_api
 from entity_api import get_entity_score, get_all_entities_score
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 import auth
 from datetime import timedelta
 from auth import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, hash_password, verify_token, verify_password
+from foursquare_api import get_foursquare_place_reviews
 
 app = FastAPI(
     title="Sentiment API",
@@ -162,3 +164,25 @@ async def entity_score(api_provider: str, entity_name: str, review_count: int, p
 # async def entities_score(api_provider: str, review_count: int, place_id: str , current_user: str = Depends(get_current_user)):
 #     return get_all_entities_score(api_provider, review_count, place_id)
 
+@app.get("/rating/{review_count}", dependencies=[Depends(get_current_user)])
+async def compare_reviews(review_count: int, place_id: str, api_provider: str, current_user: User = Depends(get_current_user)):
+    # Fetch reviews from your database
+    db_reviews = list(db['review'].find({"place_id": place_id}).limit(review_count))
+    
+    # Fetch reviews from the API provider
+    api_reviews = get_foursquare_place_reviews(place_id, review_count)
+    
+    # Compare the reviews
+    comparison_results = []
+    for db_review, api_review in zip(db_reviews, api_reviews):
+        db_review["_id"] = str(db_review["_id"])
+        comparison = {
+            "db_review": db_review,
+            "api_review": api_review,
+            "match": db_review["text"] == api_review["text"]
+        }
+        comparison_results.append(comparison)
+    
+    # print(comparison_results)
+
+    return jsonable_encoder(comparison_results)
