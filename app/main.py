@@ -124,7 +124,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 #may need to add route of user after tokenization
 @app.get("/users/me")
 async def read_users_me(current_user: User = Depends(get_current_user)):
-    return current_user
+    return jsonable_encoder(current_user)
 
 @app.get("/")
 async def root():
