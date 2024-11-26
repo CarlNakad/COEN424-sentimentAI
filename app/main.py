@@ -1,6 +1,8 @@
 from typing import List, Optional
 import logging
 from fastapi import FastAPI, HTTPException
+from starlette.responses import RedirectResponse
+
 from mongodb_connection import db
 from bson.objectid import ObjectId
 import place_review_api
@@ -18,6 +20,7 @@ from datetime import timedelta
 from auth import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, hash_password, verify_token, verify_password
 from foursquare_api import get_foursquare_place_reviews
 
+default_review_count = 10
 app = FastAPI(
     title="Sentiment API",
     description="API for sentiment reviews analysis",
@@ -119,48 +122,23 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         raise credentials_exception
     return user
 
-
-
-#may need to add route of user after tokenization
-@app.get("/users/me")
-async def read_users_me(current_user: User = Depends(get_current_user)):
-    return jsonable_encoder(current_user)
-
-@app.get("/")
+@app.get("/", include_in_schema=False)
 async def root():
-    return {"Hello": "SentimentAI!"}
+    return RedirectResponse(url="/docs")
 
+@app.get("/places/{place_id}", dependencies=[Depends(get_current_user)])
+async def get_place_reviews(place_id: str, review_count: Optional[int] = default_review_count, api_provider: Optional[str] = None):
+    return place_review_api.get_place_reviews(api_provider, place_id, review_count),
 
-@app.get("/user/{user_id}")
-async def get_data(user_id: str, current_user: User = Depends(get_current_user)):
-    reviews_collection = db.reviews
-    user_object_id = ObjectId(user_id)
-    user = reviews_collection.find_one({"_id": user_object_id})
-    if user:
-        user['_id'] = str(user['_id']) 
-        return user
-    return {"error": "User not found"}
-
-
-
-
-@app.get("/{api_provider}/places/{place_id}", dependencies=[Depends(get_current_user)])
-async def get_place_reviews(api_provider: str, place_id: str):
-    return place_review_api.get_place_reviews(api_provider, place_id, review_count=2)
-
-@app.get("/{api_provider}/places/{place_id}/{review_count}", dependencies=[Depends(get_current_user)])
-async def get_place_reviews(api_provider: str, place_id: str, review_count: int):
-    return place_review_api.get_place_reviews(api_provider, place_id, review_count)
-
-@app.get("/places/{place_id}/sentiment/{review_count}", dependencies=[Depends(get_current_user)])
-async def get_place_reviews(place_id: str, review_count: int, api_provider: Optional[str] = None):
+@app.get("/places/{place_id}/sentiment", dependencies=[Depends(get_current_user)])
+async def get_place_reviews(place_id: str, review_count: Optional[int] = default_review_count, api_provider: Optional[str] = None):
     reviews = place_review_api.get_place_reviews(api_provider, place_id, review_count)
     for review in reviews["reviews"]:
         review.pop("entities_score", None)
     return reviews
 
-@app.get("/places/{place_id}/sentiment-over-time/{review_count}", dependencies=[Depends(get_current_user)])
-async def get_sentiment_over_time(place_id: str, review_count: int, api_provider: Optional[str] = None):
+@app.get("/places/{place_id}/sentiment-over-time", dependencies=[Depends(get_current_user)])
+async def get_sentiment_over_time(place_id: str, review_count: Optional[int] = default_review_count, api_provider: Optional[str] = None):
     reviews = place_review_api.get_place_reviews(api_provider, place_id, review_count)
     reviews["reviews"] = sorted(reviews["reviews"], key=lambda x: x.get("created_at"))
 
@@ -189,11 +167,34 @@ async def get_sentiment_over_time(place_id: str, review_count: int, api_provider
 
     return sentiment_over_time
 
-@app.get("/places/{place_id}/sentiment-distribution/{review_count}", dependencies=[Depends(get_current_user)])
-async def get_place_reviews(place_id: str, review_count: int, api_provider: Optional[str] = None):
+@app.get("/places/{place_id}/sentiment-distribution", dependencies=[Depends(get_current_user)])
+async def get_place_reviews(place_id: str, review_count: Optional[int] = default_review_count, api_provider: Optional[str] = None):
     place_review_api.get_place_reviews(api_provider, place_id, review_count)
     # manipulate to output the count
     return get_sentiment_distribution(place_id)
+
+
+@app.get("/places/{place_id}/entity/{name}", dependencies=[Depends(get_current_user)])
+async def entity_score(entity_name: str, place_id: str, review_count: Optional[int] = default_review_count,  api_provider: Optional[str] = None):
+    return get_entity_score(api_provider,place_id, review_count, entity_name)
+
+@app.get("/places/{place_id}/rating", dependencies=[Depends(get_current_user)])
+async def compare_reviews(place_id: str, review_count: Optional[int] = default_review_count, api_provider: Optional[str] = None):
+    reviews = place_review_api.get_place_reviews(api_provider, place_id, review_count)
+    place_rating = reviews["place"][0]['rating']
+
+    total_sentiment_score = sum(review["sentiment_score"] for review in reviews["reviews"])
+    total_reviews = len(reviews["reviews"])
+    average_sentiment_score = total_sentiment_score / total_reviews if total_reviews > 0 else 0
+    sentiment_rating = round(average_sentiment_score * 10, 1)
+
+    comparison = {
+        "place_id": place_id,
+        "place_rating": place_rating,
+        "sentiment_rating": sentiment_rating
+    }
+    return jsonable_encoder(comparison)
+
 
 @app.post("/places/upload-place", response_model=Place, dependencies=[Depends(get_current_user)])
 async def upload_places(place: Place):
@@ -203,8 +204,9 @@ async def upload_places(place: Place):
         place.api_provider = None
     return place_review_api.insert_place(place)
 
-@app.post("/places/{place_id}/upload-review", response_model=List[Review] ,dependencies=[Depends(get_current_user)])
-async def upload_reviews(place_id:str, review:Review):
+
+@app.post("/places/{place_id}/upload-review", response_model=List[Review], dependencies=[Depends(get_current_user)])
+async def upload_reviews(place_id: str, review: Review):
     place = place_review_api.get_place(place_id)
     if not place:
         raise HTTPException(status_code=404, detail="Place not found")
@@ -213,39 +215,6 @@ async def upload_reviews(place_id:str, review:Review):
     review.review_id = str(uuid.uuid4())
     if not review.created_at:
         review.created_at = str(datetime.now().isoformat())
-    
+
     place_review_api.sentiment_analysis(place_id, place, [review.model_dump()])
     return place_review_api.return_reviews(place_id, 0)
-
-
-
-@app.get("/{api_provider}/entity/{name}/{review_count}", dependencies=[Depends(get_current_user)])
-async def entity_score(api_provider: str, entity_name: str, review_count: int, place_id: str, current_user: str = Depends(get_current_user)):
-    return get_entity_score(api_provider,place_id, review_count, entity_name)
-
-# @app.get("/{api_provider}/entities/{review_count}", dependencies=[Depends(get_current_user)])
-# async def entities_score(api_provider: str, review_count: int, place_id: str , current_user: str = Depends(get_current_user)):
-#     return get_all_entities_score(api_provider, review_count, place_id)
-
-@app.get("/rating/{review_count}", dependencies=[Depends(get_current_user)])
-async def compare_reviews(review_count: int, place_id: str, api_provider: str, current_user: User = Depends(get_current_user)):
-    # Fetch reviews from your database
-    db_reviews = list(db['review'].find({"place_id": place_id}).limit(review_count))
-    
-    # Fetch reviews from the API provider
-    api_reviews = get_foursquare_place_reviews(place_id, review_count)
-    
-    # Compare the reviews
-    comparison_results = []
-    for db_review, api_review in zip(db_reviews, api_reviews):
-        db_review["_id"] = str(db_review["_id"])
-        comparison = {
-            "db_review": db_review,
-            "api_review": api_review,
-            "match": db_review["text"] == api_review["text"]
-        }
-        comparison_results.append(comparison)
-    
-    # print(comparison_results)
-
-    return jsonable_encoder(comparison_results)

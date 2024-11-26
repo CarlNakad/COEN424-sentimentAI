@@ -57,7 +57,7 @@ def get_place_reviews(api_provider: str, place_id: str, review_count: int):
     if review_count < 1:
         raise HTTPException(status_code=400, detail="Invalid review count")
 
-    if api_provider is api_providers[0]:
+    if api_provider == api_providers[0]:
         place = get_foursquare_place(place_id)
         place_reviews = get_foursquare_place_reviews(place_id, review_count)
         place_reviews = sorted(place_reviews, key=lambda x: x.get("created_at"), reverse=True)
