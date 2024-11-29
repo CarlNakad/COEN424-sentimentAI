@@ -1,18 +1,17 @@
 from typing import List, Optional
 from starlette.responses import RedirectResponse
-
-from mongodb_connection import db
-import place_review_api
+from database.mongodb_connection import db
+from api import place_review_api
 import uuid
 from datetime import datetime
-from sentiment_distribution import get_sentiment_distribution
-from data_models import Review, Place, User, Token
-from entity_api import get_entity_score
+from api.sentiment_distribution import get_sentiment_distribution
+from database.data_models import Review, Place, User, Token
+from api.entity_api import get_entity_score
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.encoders import jsonable_encoder
 from datetime import timedelta
-from auth import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, hash_password, authenticate_user, get_current_user
+from api.auth import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, hash_password, authenticate_user, get_current_user
 
 default_review_count = 10
 app = FastAPI(
@@ -43,7 +42,7 @@ async def register_user(user: User):
 
 @app.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = authenticate_user(db, form_data.username, form_data.password)
+    user = authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

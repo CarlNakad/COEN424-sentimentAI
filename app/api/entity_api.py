@@ -1,7 +1,7 @@
-from foursquare_api import get_foursquare_place_reviews
-from google_nlp import analyze_sentiment
-from mongodb_connection import db
-from place_review_api import get_place_reviews
+from services.foursquare_api import get_foursquare_place_reviews
+from services.google_nlp import analyze_sentiment
+from database.mongodb_connection import db
+from api.place_review_api import get_place_reviews
 
 # Function that performs sentiment analysis on new reviews and store results in MongoDB
 def perform_sentiment_analysis(place_id, reviews):

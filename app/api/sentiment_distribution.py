@@ -1,4 +1,4 @@
-from mongodb_connection import db
+from database.mongodb_connection import db
 
 # Function to get sentiment distribution
 def get_sentiment_distribution(place_id):

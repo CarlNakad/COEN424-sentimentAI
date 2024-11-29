@@ -1,11 +1,11 @@
 import json
 from bson import json_util
 from fastapi import HTTPException
-from data_models import Place
+from database.data_models import Place
 
-from foursquare_api import get_foursquare_place, get_foursquare_place_reviews
-from google_nlp import analyze_sentiment
-from mongodb_connection import db
+from services.foursquare_api import get_foursquare_place, get_foursquare_place_reviews
+from services.google_nlp import analyze_sentiment
+from database.mongodb_connection import db
 
 api_providers = ["foursquare", None]
 
