@@ -4,6 +4,7 @@ from google.api_core.exceptions import GoogleAPIError
 from google.cloud import language_v1
 import os
 
+# Function to analyze the sentiment of the text
 def analyze_sentiment(text):
     client_options = {"api_key": os.getenv("GOOGLE_CLOUD_NLP_API_KEY")}
     client = language_v1.LanguageServiceClient(
@@ -25,7 +26,7 @@ def analyze_sentiment(text):
     }
     return json_response
 
-
+# Function to analyze the sentiment of the entities in the text
 def analyze_entity_sentiment(client, document, encoding_type):
     entities_score = []
     try:
@@ -44,7 +45,7 @@ def analyze_entity_sentiment(client, document, encoding_type):
         logging.error("Entity sentiment analysis failed: %s", e)
     return entities_score
 
-
+# Function to analyze the sentiment of the text
 def analyze_text_sentiment(client, document, encoding_type):
     sentiment_score, language = None, None
     try:

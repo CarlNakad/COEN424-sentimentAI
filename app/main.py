@@ -1,5 +1,4 @@
 from typing import List, Optional
-import logging
 from starlette.responses import RedirectResponse
 
 from mongodb_connection import db
@@ -7,14 +6,13 @@ import place_review_api
 import uuid
 from datetime import datetime
 from sentiment_distribution import get_sentiment_distribution
-from data_models import Review, Place
+from data_models import Review, Place, User, Token
 from entity_api import get_entity_score
 from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel
 from datetime import timedelta
-from auth import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, hash_password, verify_token, verify_password
+from auth import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, hash_password, authenticate_user, get_current_user
 
 default_review_count = 10
 app = FastAPI(
@@ -23,30 +21,6 @@ app = FastAPI(
     version="1.0.0",
     openapi_url="/openapi.yml"
 )
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-class User(BaseModel):
-    username: str
-    password: str
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-
-#tobe deleted
-fake_users_db = {
-    "BASH": {
-        "username": "bash",
-        "full_name": "bashar",
-        "email": "bash@example.com",
-        "hashed_password": "fakehashedpassword",
-        "disabled": False,
-    }
-}
-
-
 
 @app.post("/register", status_code=status.HTTP_201_CREATED)
 async def register_user(user: User):
@@ -66,17 +40,10 @@ async def register_user(user: User):
     users_collection.insert_one(new_user)
     return {"message": "User registered successfully"}
 
-def authenticate_user(username: str, password: str):
-    users_collection = db["users"]
-    user = users_collection.find_one({"username": username})
-    if not user or not verify_password(password, user["hashed_password"]):
-        logging.error(f"Authentication failed for user {username}")
-        return False
-    return user
 
 @app.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = authenticate_user(form_data.username, form_data.password)
+    user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -88,18 +55,6 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         data={"sub": user["username"]}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
-
-async def get_current_user(token: str = Depends(oauth2_scheme)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    token_data = verify_token(token, credentials_exception)
-    user = db["users"].find_one({"username": token_data.username})
-    if user is None:
-        raise credentials_exception
-    return user
 
 @app.get("/", include_in_schema=False)
 async def root():
@@ -149,7 +104,6 @@ async def get_sentiment_over_time(place_id: str, review_count: Optional[int] = d
 @app.get("/places/{place_id}/sentiment-distribution", dependencies=[Depends(get_current_user)])
 async def get_place_reviews(place_id: str, review_count: Optional[int] = default_review_count, api_provider: Optional[str] = None):
     place_review_api.get_place_reviews(api_provider, place_id, review_count)
-    # manipulate to output the count
     return get_sentiment_distribution(place_id)
 
 

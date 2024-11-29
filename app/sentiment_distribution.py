@@ -1,8 +1,10 @@
 from mongodb_connection import db
 
+# Function to get sentiment distribution
 def get_sentiment_distribution(place_id):
     sentiment_distribution = []
 
+# Pipeline to get positive reviews
     pipeline_positive = [
         {"$set": {
             "_id": {
@@ -27,6 +29,7 @@ def get_sentiment_distribution(place_id):
     positive_results = list(db['review'].aggregate(pipeline_positive))
     sentiment_distribution.append(positive_results)
 
+# Pipeline to get negative reviews
     pipeline_negative = [
         {"$set": {
             "_id": {
@@ -49,6 +52,7 @@ def get_sentiment_distribution(place_id):
     negative_results = list(db['review'].aggregate(pipeline_negative))
     sentiment_distribution.append(negative_results)
 
+# Pipeline to get neutral reviews
     pipeline_neutral = [
         {"$set": {
             "_id": {

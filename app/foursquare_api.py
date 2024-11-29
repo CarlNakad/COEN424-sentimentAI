@@ -1,5 +1,7 @@
 import requests
 
+
+# Foursquare API endpoint to get place details
 def get_foursquare_place(fsq_id):
     url = "https://api.foursquare.com/v3/places/{}?fields=name%2Clocation%2Crating".format(fsq_id)
 
@@ -18,6 +20,7 @@ def get_foursquare_place(fsq_id):
 
     return place
 
+# Foursquare API endpoint to get place reviews
 def get_foursquare_place_reviews(fsq_id, review_count):
     num_pages = (review_count // 50) + (1 if review_count % 50 != 0 else 0)
     reviews = []

@@ -9,6 +9,7 @@ from mongodb_connection import db
 
 api_providers = ["foursquare", None]
 
+# Function to return the place details and reviews
 def return_values(place_id, review_count):
     return {
         "place": json.loads(json_util.dumps(db['place'].find({"place_id": place_id}, {"_id": 0}))),
@@ -17,10 +18,12 @@ def return_values(place_id, review_count):
                                                                 {"_id": 0, "entities_score._id": 0}).limit(review_count))),
     }
 
+# Function to return the reviews
 def return_reviews(place_id, review_count):
     return json.loads(json_util.dumps(db['review'].find({"place_id": place_id},
                                                        {"_id": 0, "entities_score._id": 0}).limit(review_count)))
 
+# Function to analyze sentiment
 def sentiment_analysis(place_id, place, place_reviews):
     reviews = []
     for review in place_reviews:
@@ -49,7 +52,7 @@ def sentiment_analysis(place_id, place, place_reviews):
         db['review'].insert_many(reviews)
     db['place_reviews'].insert_one({"place": place, "reviews": reviews})
 
-
+# Function to get place reviews
 def get_place_reviews(api_provider: str, place_id: str, review_count: int):
     if api_provider not in api_providers:
         raise HTTPException(status_code=400, detail="Invalid API provider")
@@ -75,11 +78,13 @@ def get_place_reviews(api_provider: str, place_id: str, review_count: int):
 
     return return_values(place_id, review_count)
 
+# Function to insert place
 def insert_place(place: Place):
     result = db['place'].insert_one(place.model_dump())
     inserted_place = db['place'].find_one({"_id": result.inserted_id})
     return inserted_place
 
+# Function to retrieve place
 def get_place(place_id: str):
     return db['place'].find_one({"place_id": place_id})
 

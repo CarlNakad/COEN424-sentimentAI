@@ -3,7 +3,7 @@ from google_nlp import analyze_sentiment
 from mongodb_connection import db
 from place_review_api import get_place_reviews
 
-# Function tht performs sentiment analysis on new reviews and store results in MongoDB
+# Function that performs sentiment analysis on new reviews and store results in MongoDB
 def perform_sentiment_analysis(place_id, reviews):
     analyzed_reviews = []
     for review in reviews:
