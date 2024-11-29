@@ -1,4 +1,3 @@
-from fastapi import HTTPException
 from foursquare_api import get_foursquare_place_reviews
 from google_nlp import analyze_sentiment
 from mongodb_connection import db
@@ -47,28 +46,6 @@ def retrieve_and_analyze_reviews(place_id, review_count):
 
     return db_reviews[:review_count]
 
-
-# def get_entity_score(name, review_count, place_id):
-#     get_place_reviews("foursqaure", place_id, review_count)  
-
-#     pipeline = [
-#         {"$match": {"name": name, "place_id": place_id}},  
-#         {"$sort": {"created_at": -1}},                      
-#         {"$limit": review_count},                           
-#         {
-#             "$group": {                                     
-#                 "_id": "$name",
-#                 "average_sentiment": {"$avg": "$sentiment"},
-#                 "total_mentions": {"$sum": 1},
-#             }
-#         }
-#     ]
-#     result = list(db['entity_score'].aggregate(pipeline))
-#     if not result:
-#         raise HTTPException(status_code=404, detail="Entity not found or no data available")
-
-#     return result[0] 
-
 def get_entity_score(api_provider: str, place_id: str, review_count: int, entity_name: str):
     # Use get_place_reviews to retrieve and analyze reviews
     place_reviews = get_place_reviews(api_provider, place_id, review_count)
@@ -100,29 +77,6 @@ def get_entity_score(api_provider: str, place_id: str, review_count: int, entity
         "average_confidence_score": average_confidence,
         "entity_count": entity_count
     }
-
-
-
-
-# get sentiment analysis for all entities
-# def get_all_entities_score(review_count, place_id):
-#     get_place_reviews("foursquare",place_id, review_count)  
-
-#     pipeline = [
-#         {"$match": {"place_id": place_id}},  
-#         {"$sort": {"created_at": -1}},       
-#         {"$limit": review_count},            
-#         {
-#             "$group": {                      
-#                 "_id": "$name",
-#                 "average_sentiment": {"$avg": "$sentiment"},
-#                 "total_mentions": {"$sum": 1},
-#             }
-#         }
-#     ]
-#     result = list(db['entity_score'].aggregate(pipeline))
-#     return result
-
 
 def get_all_entities_score(api_provider: str, place_id: str, review_count: int):
     # Use get_place_reviews to retrieve and analyze reviews

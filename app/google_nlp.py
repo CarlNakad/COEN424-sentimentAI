@@ -1,6 +1,6 @@
 import logging
 from fastapi import HTTPException
-from google.api_core.exceptions import InvalidArgument, GoogleAPIError
+from google.api_core.exceptions import GoogleAPIError
 from google.cloud import language_v1
 import os
 

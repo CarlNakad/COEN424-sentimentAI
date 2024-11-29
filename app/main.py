@@ -1,24 +1,20 @@
 from typing import List, Optional
 import logging
-from fastapi import FastAPI, HTTPException
 from starlette.responses import RedirectResponse
 
 from mongodb_connection import db
-from bson.objectid import ObjectId
 import place_review_api
 import uuid
 from datetime import datetime
 from sentiment_distribution import get_sentiment_distribution
-from data_models import Review, Place, PlaceReviews
-from entity_api import get_entity_score, get_all_entities_score
+from data_models import Review, Place
+from entity_api import get_entity_score
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
-import auth
 from datetime import timedelta
 from auth import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, hash_password, verify_token, verify_password
-from foursquare_api import get_foursquare_place_reviews
 
 default_review_count = 10
 app = FastAPI(
@@ -78,21 +74,6 @@ def authenticate_user(username: str, password: str):
         return False
     return user
 
-
-
-# def fake_hash_password(password: str):
-#     return "fakehashed" + password
-
-# def authenticate_user(fake_db, username: str, password: str):
-#     user = fake_db.get(username)
-#     if not user:
-#         logging.error(f"User {username} not found")
-#         return False
-#     if not fake_hash_password(password) == user["hashed_password"]:
-#         logging.error(f"Password for user {username} does not match")
-#         return False
-#     return user
-
 @app.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     user = authenticate_user(form_data.username, form_data.password)
@@ -107,8 +88,6 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         data={"sub": user["username"]}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
-
-
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
