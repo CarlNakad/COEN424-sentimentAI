@@ -17,8 +17,7 @@ default_review_count = 10
 app = FastAPI(
     title="Sentiment API",
     description="API for sentiment reviews analysis",
-    version="1.0.0",
-    openapi_url="/openapi.yml"
+    version="1.0.0"
 )
 
 @app.post("/register", status_code=status.HTTP_201_CREATED)
