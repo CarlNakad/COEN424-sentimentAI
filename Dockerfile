@@ -7,13 +7,14 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Set working directory
-WORKDIR /app
+ENV APP_HOME /root
+WORKDIR $APP_HOME
 
 # Copy app directory to container
-COPY ./app /app
+COPY ./app $APP_HOME/app
 
 # Set the Python module search path
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=$APP_HOME/app
 
 # Expose port 8080 for Google Cloud Run
 EXPOSE 8080
